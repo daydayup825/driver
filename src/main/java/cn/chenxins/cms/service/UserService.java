@@ -95,12 +95,17 @@ public class UserService {
         if (linUserByCard != null) {
             throw new BussinessErrorException("身份证号码已经存在");
         }
+        if (!StringUtils.isEmpty(userDTO.getCoachName())) {
+            LinUser userByName = getUserByName(userDTO.getCoachName());
+            userDTO.setCoach_id(userByName.getId());
+        }
+
         userDTO.setCreateTime(JdateUtils.getCurrentDate());
         userDTO.setUpdateTime(JdateUtils.getCurrentDate());
         dbMapper.insert(userDTO);
     }
 
-    public UserPageJsonOut getUsers(String nickname, Integer type, Integer subjectOne, Integer subjectTwo, String coachName, Integer page, Integer count) throws BussinessErrorException, Exception {
+    public UserPageJsonOut getUsers(String nickname, Integer type, Integer subjectOne, Integer subjectTwo, String coachName, Integer page, Integer count,String start,String end) throws BussinessErrorException, Exception {
         // 开始分页
         PageHelper.startPage(page, count);
         Example example = new Example(LinUser.class);
@@ -120,6 +125,11 @@ public class UserService {
         if (type != null) {
             criteria.andEqualTo("type", type);
         }
+
+        if (start != null && end != null) {
+            criteria.andBetween("registerTime", start, end);
+        }
+
         if (!StringUtils.isEmpty(coachName)){
             Example coachExample = new Example(LinUser.class);
             Example.Criteria criteriaExample = coachExample.createCriteria();

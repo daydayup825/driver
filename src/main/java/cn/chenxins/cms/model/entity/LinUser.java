@@ -52,11 +52,12 @@ public class LinUser {
     @Column(name = "introducer")
     private String introducer;
 
-    @Column(name = "subject_one")
-    private Integer subjectOne;
-
+    // 0 没考 1考了 2没考过
     @Column(name = "subject_two")
     private Integer subjectTwo;
+
+    @Column(name = "subject_three")
+    private Integer subjectThree;
 
     @Column(name = "register_time")
     private Date registerTime;

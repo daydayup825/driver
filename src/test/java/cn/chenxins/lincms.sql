@@ -11,7 +11,7 @@ create table drive.lin_user
     cost          double      null,
     coach_id      int         null,
     introducer    varchar(32) null,
-    subject_one   int         null,
+    subject_three   int         null,
     subject_two   int         null,
     register_time timestamp   null,
     type          int         null
