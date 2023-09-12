@@ -97,7 +97,9 @@ public class UserService {
         }
         if (!StringUtils.isEmpty(userDTO.getCoachName())) {
             LinUser userByName = getUserByName(userDTO.getCoachName());
-            userDTO.setCoach_id(userByName.getId());
+            if (userByName!=null){
+                userDTO.setCoach_id(userByName.getId());
+            }
         }
 
         userDTO.setCreateTime(JdateUtils.getCurrentDate());

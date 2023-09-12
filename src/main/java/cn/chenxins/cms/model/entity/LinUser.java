@@ -62,5 +62,8 @@ public class LinUser {
     @Column(name = "register_time")
     private Date registerTime;
 
+    @Transient
+    private String registerTimeStr;
+
 
 }
