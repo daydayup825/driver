@@ -110,10 +110,11 @@ public class TicketService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void addmodelS(Ticket ticket
-    ) throws BussinessErrorException,Exception{
-        ticketMapper.insert(ticket);
+    public Integer addmodelS(Ticket ticket
+    ) throws BussinessErrorException, Exception {
         ticket.setCreateTime(new Date());
+        int insert = ticketMapper.insert(ticket);
+        return ticket.getId();
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
