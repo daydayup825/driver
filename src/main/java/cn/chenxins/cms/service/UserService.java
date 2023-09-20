@@ -107,7 +107,7 @@ public class UserService {
         dbMapper.insert(userDTO);
     }
 
-    public UserPageJsonOut getUsers(String nickname, Integer type, Integer subjectOne, Integer subjectTwo, String coachName, Integer page, Integer count,String start,String end) throws BussinessErrorException, Exception {
+    public UserPageJsonOut getUsers(String nickname, Integer type, Integer subjectTwo, Integer subjectThree, String coachName, Integer page, Integer count,String start,String end) throws BussinessErrorException, Exception {
         // 开始分页
         PageHelper.startPage(page, count);
         Example example = new Example(LinUser.class);
@@ -117,11 +117,11 @@ public class UserService {
             criteria.andLike("nickname", "%" + nickname + "%");
         }
 
-        if (subjectOne != null) {
-            criteria.andEqualTo("subjectOne", subjectOne);
-        }
         if (subjectTwo != null) {
             criteria.andEqualTo("subjectTwo", subjectTwo);
+        }
+        if (subjectThree != null) {
+            criteria.andEqualTo("subjectThree", subjectThree);
         }
 
         if (type != null) {

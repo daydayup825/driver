@@ -154,7 +154,7 @@ public class UserController {
     @GetMapping(value = "search",name="查询用户")
     public ResultJson searchAllUserByKey(@RequestParam(required = false) String nickName
             ,@RequestParam(required = true) Integer type
-            ,@RequestParam(required = false) Integer subjectOne
+            ,@RequestParam(required = false) Integer subjectThree
             ,@RequestParam(required = false) Integer subjectTwo
             ,@RequestParam(required = false) String coachName
             ,@RequestParam(required = false) Integer page
@@ -169,7 +169,7 @@ public class UserController {
             count=10;
         }
         try {
-            return ResultJson.Sucess(userService.getUsers(nickName, type, subjectOne, subjectTwo, coachName, page, count,startDate,endDate));
+            return ResultJson.Sucess(userService.getUsers(nickName, type, subjectTwo, subjectThree, coachName, page, count,startDate,endDate));
         }
         catch (BussinessErrorException be){
             return ResultJson.BussinessException(be.getLocalizedMessage());

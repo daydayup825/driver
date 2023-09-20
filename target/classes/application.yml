@@ -27,9 +27,9 @@ spring:
   profiles: dev
 
   datasource:
-    url: jdbc:mysql://127.0.0.1:3331/drive?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    url: jdbc:mysql://127.0.0.1:3336/drive?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
     username: root
-    password: coding123
+    password: 123456Admin@123
     driver-class-name: com.mysql.jdbc.Driver
     #使用druid数据源
     type: com.alibaba.druid.pool.DruidDataSource
