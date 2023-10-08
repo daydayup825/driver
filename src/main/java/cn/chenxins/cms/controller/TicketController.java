@@ -44,12 +44,11 @@ public class TicketController {
 
 
     @PostMapping("/")
-    @LoginRequired
-    public Object createTicket(@RequestHeader(value = "authorization",required = false) String authorization,@RequestBody Ticket ticket) {
+    public Object createTicket(@RequestHeader(value = "ticket",required = false) String authorization,@RequestBody Ticket ticket) {
 
         try {
-            ticketService.addmodelS(ticket);
-            return ResultJson.Sucess();
+            Integer integer = ticketService.addmodelS(ticket);
+            return ResultJson.Sucess(integer);
 
         } catch (BussinessErrorException be) {
             return ResultJson.BussinessException(be.getLocalizedMessage());
@@ -64,8 +63,8 @@ public class TicketController {
     public Object updateBook(@RequestHeader(value = "authorization",required = false) String authorization,@PathVariable Integer id, @RequestBody Ticket ticket) {
 
         try {
-            ticketService.updModelS(ticket);
-            return ResultJson.Sucess();
+            Ticket ticketDetail = ticketService.updModelS(ticket);
+            return ResultJson.Sucess(ticketDetail);
 
         } catch (BussinessErrorException be) {
             return ResultJson.BussinessException(be.getLocalizedMessage());

@@ -25,7 +25,7 @@ public class ConstConfig {
     /**
      * 存放Authorization的header字段
      */
-    public static final String AUTHORIZATION = "authorization";
+    public static final String AUTHORIZATION = "token";
 
 
     public static String SECRET_KEY="abcedefighijklmn12345678";

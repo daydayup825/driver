@@ -104,11 +104,13 @@ public class AuthorizationInterceptor   extends HandlerInterceptorAdapter {
             {
                 //从header中得到token
                 String tokenkey=getBearerToken(request);
-                if (tokenkey==null || "".equals(tokenkey.trim()))
+                System.out.println(tokenkey);
+                if (tokenkey == null || "".equals(tokenkey.trim()))
                 {
                     return returnResponseMsg(response, HttpServletResponse.SC_FORBIDDEN,"无法正常获取TOKEN");
                 }
                 String checkMsg=loginRequired(tokenkey,request);
+                System.out.println(checkMsg);
                 if ("OK".equals(checkMsg))
                 {
                     return true;
@@ -229,11 +231,9 @@ public class AuthorizationInterceptor   extends HandlerInterceptorAdapter {
             return null;
         }
         String[] aa=authss.split("\\.");
-        if (aa.length!=2)
+        if (aa.length!=2){
             return null;
-       // String baseToken=aa[1];
-//        String ss= new String(Base64.getDecoder().decode(baseToken),"utf-8");
-//        ss=ss.substring(0,ss.length()-1);
+        }
         return authss;
     }
 

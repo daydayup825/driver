@@ -44,14 +44,14 @@ public class MemoryTokenManager implements TokenManager {
      */
     public String createReToken(String accessToken) throws TokenException {
         //使用uuid作为源token,一步部分
-        String preToken = UUID.randomUUID().toString().replace("-", "");
+   /*     String preToken = UUID.randomUUID().toString().replace("-", "");
 
         String key=preToken+"."+DesUtils.md5("refresh_token");
 
 
         //存储到redis并设置过期时间
-        cache.put(key,accessToken);
-        return key;
+        cache.put(key,accessToken);*/
+        return "";
     }
 
 

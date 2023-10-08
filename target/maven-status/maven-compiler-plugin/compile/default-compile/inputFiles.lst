@@ -15,6 +15,7 @@
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/cms/model/json/TokenJsonOut.java
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/cms/model/json/UserJsonIn.java
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/cms/model/dto/UserDTO.java
+/Users/fanbopeng/code/driver/src/main/java/cn/chenxins/cms/model/dto/QueryParam.java
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/cms/model/entity/Ticket.java
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/utils/MetaJson.java
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/cms/controller/UserController.java

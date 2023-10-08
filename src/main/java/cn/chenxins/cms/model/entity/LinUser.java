@@ -1,5 +1,6 @@
 package cn.chenxins.cms.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.persistence.Column;
@@ -55,6 +56,14 @@ public class LinUser {
     // 0 没考 1考了 2没考过
     @Column(name = "subject_two")
     private Integer subjectTwo;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @Column(name = "subject_two_time")
+    private Date subjectTwoTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @Column(name = "subject_three_time")
+    private Date subjectThreeTime;
 
     @Column(name = "subject_three")
     private Integer subjectThree;

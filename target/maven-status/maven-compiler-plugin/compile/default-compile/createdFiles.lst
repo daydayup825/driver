@@ -47,6 +47,7 @@ cn/chenxins/cms/model/json/UserJsonIn.class
 cn/chenxins/cms/config/SwaggerConfig.class
 cn/chenxins/authorization/annotation/AdminRequired.class
 cn/chenxins/utils/JsonUtils.class
+cn/chenxins/cms/model/dto/QueryParam.class
 cn/chenxins/exception/TokenException.class
 cn/chenxins/cms/model/json/UserPageJsonOut.class
 cn/chenxins/authorization/manager/TokenManager.class

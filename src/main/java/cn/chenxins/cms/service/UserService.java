@@ -1,15 +1,12 @@
 package cn.chenxins.cms.service;
 
 
-import cn.chenxins.cms.model.entity.LinLog;
 import cn.chenxins.cms.model.entity.LinUser;
 import cn.chenxins.cms.model.entity.mapper.LinUserMapper;
-import cn.chenxins.cms.model.json.LogPageJsonOut;
 import cn.chenxins.cms.model.json.UserJsonIn;
 import cn.chenxins.cms.model.json.UserPageJsonOut;
 import cn.chenxins.exception.BussinessErrorException;
 import cn.chenxins.exception.ParamValueException;
-import cn.chenxins.utils.DesUtils;
 import cn.chenxins.utils.JdateUtils;
 import cn.chenxins.utils.StringUtil;
 import com.github.pagehelper.PageHelper;
@@ -22,7 +19,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import tk.mybatis.mapper.entity.Example;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +46,7 @@ public class UserService {
         Example.Criteria criteria = example.createCriteria();
 
         criteria.andEqualTo("deleteTime", null);
-        criteria.andEqualTo("phone", phone);
+        criteria.andEqualTo("card", phone);
         return dbMapper.selectOneByExample(example);
 
     }
@@ -66,7 +62,7 @@ public class UserService {
     }
 
     public LinUser loginUser(UserJsonIn userJsonIn) throws Exception {
-        LinUser user = getUserByPhone(userJsonIn.getPhone());
+        LinUser user = getUserByPhone(userJsonIn.getNickname());
         if (user == null) {
             throw new BussinessErrorException("手机号码未注册");
         }
@@ -77,17 +73,14 @@ public class UserService {
     }
 
     public void register(LinUser userDTO) throws BussinessErrorException, Exception {
-        if (StringUtils.isEmpty(userDTO.getCard())
-                || StringUtils.isEmpty(userDTO.getNickname())
-                || StringUtils.isEmpty(userDTO.getPhone())) {
+        System.out.println(userDTO.getNickname());
+        System.out.println(userDTO.getCard());
+
+        if ( StringUtils.isEmpty(userDTO.getNickname())
+                || StringUtils.isEmpty(userDTO.getCard())) {
             throw new ParamValueException("参数错误");
         }
-        LinUser param = new LinUser();
-        param.setPhone(userDTO.getPhone());
-        LinUser linUserByPhone = dbMapper.selectOne(param);
-        if (linUserByPhone != null) {
-            throw new BussinessErrorException("手机号码已经存在");
-        }
+
 
         LinUser cardParam = new LinUser();
         cardParam.setCard(userDTO.getCard());
@@ -107,7 +100,7 @@ public class UserService {
         dbMapper.insert(userDTO);
     }
 
-    public UserPageJsonOut getUsers(String nickname, Integer type, Integer subjectTwo, Integer subjectThree, String coachName, Integer page, Integer count,String start,String end) throws BussinessErrorException, Exception {
+    public UserPageJsonOut getUsers(Integer searchTimerangeType,String nickname, Integer type, Integer subjectTwo, Integer subjectThree, String coachName, Integer page, Integer count,String start,String end) throws BussinessErrorException, Exception {
         // 开始分页
         PageHelper.startPage(page, count);
         Example example = new Example(LinUser.class);
@@ -129,7 +122,13 @@ public class UserService {
         }
 
         if (start != null && end != null) {
-            criteria.andBetween("registerTime", start, end);
+            if (searchTimerangeType==1){
+                criteria.andBetween("subjectTwoTime", start, end);
+            }else if (searchTimerangeType==2){
+                criteria.andBetween("subjectTwoThree", start, end);
+            }else {
+                criteria.andBetween("registerTime", start, end);
+            }
         }
 
         if (!StringUtils.isEmpty(coachName)){
@@ -144,7 +143,7 @@ public class UserService {
             }
             criteria.andIn("coach_id",linUserIds);
         }
-
+        criteria.andEqualTo("deleteTime", null);
         example.orderBy("registerTime").desc();
 
         List<LinUser> alist = dbMapper.selectByExample(example);
@@ -216,7 +215,7 @@ public class UserService {
 
     public void delModelS(List<Integer> ids) {
         for (Integer id : ids) {
-            LinUser linUser = dbMapper.selectOneByExample(id);
+            LinUser linUser = dbMapper.selectByPrimaryKey(id);
             if (linUser!=null)
             if (linUser.getDeleteTime()==null){
                 linUser.setDeleteTime(JdateUtils.getCurrentDate());

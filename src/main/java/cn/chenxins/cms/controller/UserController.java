@@ -6,6 +6,7 @@ import cn.chenxins.authorization.annotation.LoggerReg;
 import cn.chenxins.authorization.annotation.LoginRequired;
 import cn.chenxins.authorization.annotation.RefreshTokenRequired;
 import cn.chenxins.authorization.manager.TokenManager;
+import cn.chenxins.cms.model.dto.QueryParam;
 import cn.chenxins.cms.model.entity.LinUser;
 import cn.chenxins.cms.model.json.TokenJsonOut;
 import cn.chenxins.cms.model.json.UserJsonIn;
@@ -81,8 +82,8 @@ public class UserController {
          * 校验入参
          */
         try {
-            if (StringUtils.isEmpty(userJsonIn.getPhone())){
-                throw new ParamValueException("手机号码不能为空");
+            if (StringUtils.isEmpty(userJsonIn.getNickname())){
+                throw new ParamValueException("身份证不能为空");
             }
         } catch (ParamValueException pe) {
             return ResultJson.ParameterException(pe.getLocalizedMessage(), userJsonIn);
@@ -102,13 +103,39 @@ public class UserController {
 
         } catch (TokenException te) {
             return ResultJson.TokenRedisException();
-        } catch (BussinessErrorException be) {
-            return ResultJson.BussinessException(be.getLocalizedMessage());
-        } catch (Exception e) {
+        }catch (Exception e) {
             e.printStackTrace();
             return ResultJson.ServerError();
         }
     }
+
+    @PostMapping("logout")
+    public Object userLogout(HttpServletRequest webRequest) {
+
+        String bearerToken = getBearerToken(webRequest);
+
+        tokenManager.deleteToken(bearerToken);
+        return ResultJson.Sucess();
+    }
+
+    private String getBearerToken(HttpServletRequest request) {
+        //从header中得到token
+        String authss = request.getHeader(ConstConfig.AUTHORIZATION);
+        if (authss==null)
+        {
+            return null;
+        }
+        String[] aa=authss.split("\\.");
+        if (aa.length!=2)
+            return null;
+        // String baseToken=aa[1];
+//        String ss= new String(Base64.getDecoder().decode(baseToken),"utf-8");
+//        ss=ss.substring(0,ss.length()-1);
+        return authss;
+    }
+
+
+
 
     @PostMapping("register")
     @AdminRequired
@@ -126,7 +153,28 @@ public class UserController {
         }
     }
 
-    @PutMapping("/")
+    @PostMapping("registers")
+    @AdminRequired
+    @LoggerReg(template = "管理员新建了一个用户")
+    public Object userRegisters(@RequestBody List<LinUser> userInfos,
+                               @RequestHeader(value = "authorization",required = false) String authorization) {
+        try {
+            for (LinUser userInfo : userInfos) {
+                try {
+                    userService.register(userInfo);
+                }catch (Exception e){
+                    System.out.println(e);
+                }
+            }
+            return ResultJson.Sucess();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultJson.ServerError();
+        }
+    }
+
+
+    @PutMapping()
     @LoginRequired
     public Object userUpdate(@RequestBody List<LinUser> users, NativeWebRequest webRequest,
                              @RequestHeader(value = "authorization",required = false) String authorization) {
@@ -136,6 +184,7 @@ public class UserController {
             if (uid == null) {
                 return ResultJson.ServerError();
             }
+            System.out.println(users.size());
             userService.updateS(users);
             return ResultJson.Sucess();
         } catch (TokenException te) {
@@ -151,25 +200,18 @@ public class UserController {
 
 
 
-    @GetMapping(value = "search",name="查询用户")
-    public ResultJson searchAllUserByKey(@RequestParam(required = false) String nickName
-            ,@RequestParam(required = true) Integer type
-            ,@RequestParam(required = false) Integer subjectThree
-            ,@RequestParam(required = false) Integer subjectTwo
-            ,@RequestParam(required = false) String coachName
-            ,@RequestParam(required = false) Integer page
-            ,@RequestParam(required = false) Integer count
-            , @RequestParam(required = false) String startDate
-            , @RequestParam(required = false) String endDate
-    ,@RequestHeader(value = "authorization",required = false) String authorization){
-        if (page==null) {
-            page=1;
+    @PostMapping(value = "search",name="查询用户")
+    public ResultJson searchAllUserByKey(
+            @RequestBody QueryParam queryParam
+    ,@RequestHeader(value = "ticket",required = false) String ticket){
+        if (queryParam.getPage()==null) {
+            queryParam.setPage(1);
         }
-        if (count==null) {
-            count=10;
+        if (queryParam.getCount()==null) {
+           queryParam.setCount(10);
         }
         try {
-            return ResultJson.Sucess(userService.getUsers(nickName, type, subjectTwo, subjectThree, coachName, page, count,startDate,endDate));
+            return ResultJson.Sucess(userService.getUsers(queryParam.getSearchTimerangeType(),queryParam.getNickName(), queryParam.getType(), queryParam.getSubjectTwo(), queryParam.getSubjectThree(), queryParam.getCoachName(), queryParam.getPage(), queryParam.getCount(),queryParam.getStartDate(),queryParam.getEndDate()));
         }
         catch (BussinessErrorException be){
             return ResultJson.BussinessException(be.getLocalizedMessage());
@@ -195,6 +237,7 @@ public class UserController {
             ,@RequestParam(required = false) Integer count
             , @RequestParam(required = false) String startDate
             , @RequestParam(required = false) String endDate
+            , @RequestParam(required = false) Integer searchTimerangeType
             ,@RequestHeader(value = "authorization",required = false)String authorization) throws Exception {
 
         String sTitle = "nickname,card,phone,cost,coachName,subjectTwo,subjectThree,registerTimeStr,introducer";
@@ -207,7 +250,7 @@ public class UserController {
         if (count==null) {
             count=1000000;
         }
-        List<Map> users = userService.getUsers(nickName, type, subjectOne, subjectTwo, coachName, page, count, startDate, endDate).getCollection()
+        List<Map> users = userService.getUsers(searchTimerangeType,nickName, type, subjectOne, subjectTwo, coachName, page, count, startDate, endDate).getCollection()
                 .stream().map(user ->
                 {
                     String dateGenFormat = JdateUtils.getDateGenFormat(user.getRegisterTime());
@@ -275,25 +318,23 @@ public class UserController {
     }
 
 
-    @GetMapping(value = "/{userId}/{type}/tickets",name="ticket")
+    @PostMapping(value = "/{userId}/{type}/tickets",name="ticket")
     @GroupRequired
     public ResultJson searchAllUserByKey(@PathVariable("userId") Integer userId
             , @PathVariable("type") Integer type
-            , @RequestParam(required = false) Integer page
-            , @RequestParam(required = false) Integer count
-            , @RequestParam(required = false) String startDate
-            , @RequestParam(required = false) String endDate,
-                                         @RequestHeader(value = "authorization",required = false) String authorization) {
+            ,@RequestBody
+    QueryParam queryParam,
+                                         @RequestHeader(value = "ticket",required = false) String ticket) {
 
-        if (page==null) {
-            page=1;
+        if (queryParam.getPage()==null) {
+            queryParam.setPage(1);
         }
-        if (count==null) {
-            count=10;
+        if (queryParam.getCount()==null) {
+            queryParam.setCount(100);
         }
 
         try {
-            return ResultJson.Sucess(ticketService.getUserTickets(userId, type, startDate, endDate, page, count));
+            return ResultJson.Sucess(ticketService.getUserTickets(userId, type, queryParam.getStartDate(), queryParam.getEndDate(), queryParam.getPage(), queryParam.getCount()));
         }
         catch (Exception e){
             e.printStackTrace();
@@ -351,7 +392,7 @@ public class UserController {
 
     @DeleteMapping(value = "",name="删除用户")
     @LoginRequired
-    public Object deleteBook(@RequestBody List<Integer> ids,NativeWebRequest webRequest,@RequestHeader(value = "authorization",required = false) String authorization) {
+    public Object deleteBook(@RequestBody List<Integer> ids,NativeWebRequest webRequest,@RequestHeader(value = "token",required = false) String token) {
         try {
             Integer uid = (Integer) webRequest.getAttribute(ConstConfig.CURRENT_USER_ID, RequestAttributes.SCOPE_REQUEST);
             if (uid == null) {

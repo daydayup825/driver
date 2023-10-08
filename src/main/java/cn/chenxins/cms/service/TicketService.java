@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import tk.mybatis.mapper.common.condition.UpdateByConditionMapper;
 import tk.mybatis.mapper.entity.Example;
 
 import java.util.Arrays;
@@ -37,10 +38,6 @@ public class TicketService {
     private LinUserMapper linUserMapper;
 
 
-
-
-
-
     public TicketPageJsonOut getUserTickets(Integer userId, Integer type, String startDate, String endDate, Integer page, Integer count) {
         PageHelper.startPage(page, count);
         Example example = new Example(Ticket.class);
@@ -50,15 +47,15 @@ public class TicketService {
             if (type == 3) {
                 criteria.andEqualTo("studentId", userId);
             }
-            if (type == 4) {
+            if (type == 2) {
                 criteria.andEqualTo("coashId", userId);
             }
         }
 
         if (startDate != null && endDate != null) {
-            criteria.andBetween("createTime", startDate, endDate);
+            criteria.andBetween("updateTime", startDate, endDate);
         }
-        example.orderBy("createTime").desc();
+        example.orderBy("updateTime").desc();
 
         List<Ticket> tickets = ticketMapper.selectByExample(example);
         int total = ticketMapper.selectCountByExample(example);
@@ -112,21 +109,40 @@ public class TicketService {
     @Transactional(propagation = Propagation.REQUIRED)
     public Integer addmodelS(Ticket ticket
     ) throws BussinessErrorException, Exception {
+        Example example = new Example(Ticket.class);
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("studentId",ticket.getStudentId());
+        criteria.andIsNotNull("coashId");
+        List<Ticket> tickets = ticketMapper.selectByExample(example);
+        if (!CollectionUtils.isEmpty(tickets)){
+            throw new BussinessErrorException("已签到，签到教练为:" +linUserMapper.selectByPrimaryKey(tickets.stream().findAny().get().getId()).getNickname());
+        }
         ticket.setCreateTime(new Date());
         int insert = ticketMapper.insert(ticket);
         return ticket.getId();
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void updModelS(Ticket ticket) throws Exception {
+    public Ticket updModelS(Ticket ticket) throws Exception {
         Ticket dbInfo = ticketMapper.selectByPrimaryKey(ticket.getId());
         if (dbInfo == null || dbInfo.getDeleteTime() != null) {
             throw new BussinessErrorException("没有找到相关的信息");
         }
+        if ( dbInfo.getCoashId() != null) {
+            LinUser linUser = linUserMapper.selectByPrimaryKey(dbInfo.getCoashId());
+            throw new BussinessErrorException("二维码已被核销,核销人是" + linUser.getNickname());
+        }
         dbInfo.setUserCount(ticket.getUserCount());
         dbInfo.setCoashId(ticket.getCoashId());
-              ticket.setUpdateTime(new Date());
+        dbInfo.setUpdateTime(new Date());
         ticketMapper.updateByPrimaryKey(dbInfo);
+        Ticket ticketDetail = getTicketDetail(dbInfo.getId());
+        ticketDetail.setUpdateTime(dbInfo.getUpdateTime());
+
+        LinUser linUser = linUserMapper.selectByPrimaryKey(ticket.getStudentId());
+        linUser.setCoach_id(ticketDetail.getCoashId());
+        linUserMapper.updateByPrimaryKey(linUser);
+        return ticketDetail;
     }
 
 
@@ -141,4 +157,7 @@ public class TicketService {
     }
 
 
+    public Object logout(Integer uid) {
+        return null;
+    }
 }

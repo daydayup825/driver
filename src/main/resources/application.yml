@@ -19,7 +19,12 @@ mapper:
   i-d-e-n-t-i-t-y: MYSQL
 
 server:
-  port: 8082
+  ssl:
+    key-store: classpath:jieleyj.com.jks
+    key-store-password: d4xl3r2w5s
+    key-store-type: JKS
+    enabled: true
+  port: 443
 ---
 
 #开发配置
@@ -27,7 +32,7 @@ spring:
   profiles: dev
 
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/drive?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
+    url: jdbc:mysql://49.232.228.92:3306/drive?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false
     username: root
     password: 123456Admin@123
     driver-class-name: com.mysql.jdbc.Driver
