@@ -1,7 +1,10 @@
 package cn.chenxins.utils;
 
+import org.apache.commons.io.FileUtils;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -63,6 +66,7 @@ public class CSVUtils {
             }
             // 写出响应
             os.write(buf.toString().getBytes("GBK"));
+
             os.flush();
         } catch (Exception e) {
             throw e;
@@ -75,6 +79,47 @@ public class CSVUtils {
                     e1.printStackTrace();
                 }
             }
+        }
+    }
+
+    /**
+     *
+     * @param dataList 集合数据
+     * @param colNames 表头部数据
+     * @param mapKey 查找的对应数据
+     */
+    public static String doExport(List<Map> dataList, String colNames, String mapKey) throws IOException {
+        try {
+            StringBuffer buf = new StringBuffer();
+
+            String[] colNamesArr = null;
+            String[] mapKeyArr = null;
+
+            colNamesArr = colNames.split(",");
+            mapKeyArr = mapKey.split(",");
+
+            // 完成数据csv文件的封装
+            // 输出列头
+            for (String aColNamesArr : colNamesArr) {
+                buf.append(aColNamesArr).append(CSV_COLUMN_SEPARATOR);
+            }
+            buf.append(CSV_RN);
+
+            if (null != dataList) { // 输出数据
+                for (Map<String, Object> aDataList : dataList) {
+                    for (String aMapKeyArr : mapKeyArr) {
+                        buf.append(aDataList.get(aMapKeyArr)).append(CSV_COLUMN_SEPARATOR);
+                    }
+                    buf.append(CSV_RN);
+                }
+            }
+            long ts = System.currentTimeMillis();
+            String path = "/data/path/" + ts+".xls";
+
+            FileUtils.write(new File(path), buf.toString(), "UTF-8");
+            return String.valueOf(ts);
+        } catch (Exception e) {
+            throw e;
         }
     }
 
@@ -97,6 +142,8 @@ public class CSVUtils {
    /*     response.setHeader("Content-Disposition",
                 "attachment;fileName=" + FileUtils.setFileDownloadHeader(request, fn));//重新生成的新文件的名字
 */    }
+
+
 
 }
 

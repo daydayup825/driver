@@ -115,7 +115,7 @@ public class TicketService {
         criteria.andIsNotNull("coashId");
         List<Ticket> tickets = ticketMapper.selectByExample(example);
         if (!CollectionUtils.isEmpty(tickets)){
-            throw new BussinessErrorException("已签到，签到教练为:" +linUserMapper.selectByPrimaryKey(tickets.stream().findAny().get().getId()).getNickname());
+            throw new BussinessErrorException("已签到，签到教练为:" +linUserMapper.selectByPrimaryKey(tickets.stream().findAny().get().getCoashId()).getNickname());
         }
         ticket.setCreateTime(new Date());
         int insert = ticketMapper.insert(ticket);

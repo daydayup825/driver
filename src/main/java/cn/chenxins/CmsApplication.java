@@ -23,7 +23,7 @@ public class CmsApplication {
 	// 获取配置端口
 	private Integer httpPort=8082;
 
-	@Bean
+
 	public ServletWebServerFactory servletContainer() {
 		TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
 		// 添加http

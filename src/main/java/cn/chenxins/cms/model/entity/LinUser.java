@@ -67,7 +67,7 @@ public class LinUser {
 
     @Column(name = "subject_three")
     private Integer subjectThree;
-
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @Column(name = "register_time")
     private Date registerTime;
 

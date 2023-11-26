@@ -19,6 +19,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import tk.mybatis.mapper.entity.Example;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class UserService {
         Example example = new Example(LinUser.class);
         Example.Criteria criteria = example.createCriteria();
 
-        criteria.andEqualTo("deleteTime", null);
+        criteria.andIsNull("deleteTime");
         criteria.andEqualTo("card", phone);
         return dbMapper.selectOneByExample(example);
 
@@ -100,7 +101,7 @@ public class UserService {
         dbMapper.insert(userDTO);
     }
 
-    public UserPageJsonOut getUsers(Integer searchTimerangeType,String nickname, Integer type, Integer subjectTwo, Integer subjectThree, String coachName, Integer page, Integer count,String start,String end) throws BussinessErrorException, Exception {
+    public UserPageJsonOut getUsers(String coachName, Integer searchTimerangeType, String nickname, Integer type, Integer subjectTwo, Integer subjectThree, String introducer, Integer page, Integer count, String start, String end) throws BussinessErrorException, Exception {
         // 开始分页
         PageHelper.startPage(page, count);
         Example example = new Example(LinUser.class);
@@ -131,20 +132,24 @@ public class UserService {
             }
         }
 
-        if (!StringUtils.isEmpty(coachName)){
+        if (introducer != null) {
+            criteria.andEqualTo("introducer", subjectTwo);
+        }
+
+        if (!StringUtils.isEmpty(coachName)) {
             Example coachExample = new Example(LinUser.class);
             Example.Criteria criteriaExample = coachExample.createCriteria();
             criteriaExample.andEqualTo("nickname", coachName);
-            criteriaExample.andEqualTo("type",2);
+            criteriaExample.andEqualTo("type", 2);
             List<LinUser> linUsers = dbMapper.selectByExample(coachExample);
             List<Integer> linUserIds = linUsers.stream().map(LinUser::getId).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(linUserIds)){
-                return new UserPageJsonOut(0,null);
+            if (CollectionUtils.isEmpty(linUserIds)) {
+                return new UserPageJsonOut(0, null);
             }
-            criteria.andIn("coach_id",linUserIds);
+            criteria.andIn("coach_id", linUserIds);
         }
-        criteria.andEqualTo("deleteTime", null);
-        example.orderBy("registerTime").desc();
+        criteria.andIsNull("deleteTime");
+        example.orderBy("createTime").desc();
 
         List<LinUser> alist = dbMapper.selectByExample(example);
         List<Integer> collect = alist.stream().map(LinUser::getCoach_id).collect(Collectors.toList());
@@ -222,5 +227,17 @@ public class UserService {
                 dbMapper.updateByPrimaryKey(linUser);
             }
         }
+    }
+
+    public List<LinUser> getUsersByIds(List<Integer> ids) {
+        Example example = new Example(LinUser.class);
+
+        Example.Criteria criteria = example.createCriteria();
+
+
+            criteria.andIn("id",ids );
+
+
+        return  dbMapper.selectByExample(example);
     }
 }

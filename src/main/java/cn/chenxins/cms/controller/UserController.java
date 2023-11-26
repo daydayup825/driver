@@ -26,9 +26,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.util.NumberUtils;
 import org.springframework.util.StringUtils;
@@ -50,8 +54,10 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -76,7 +82,7 @@ public class UserController {
 
 
     @PostMapping("login")
-    public Object userLogin(@RequestBody UserJsonIn userJsonIn) {
+    public Object userLogin(@RequestBody UserJsonIn userJsonIn) throws Exception {
 
         /**
          * 校验入参
@@ -91,9 +97,12 @@ public class UserController {
             e.printStackTrace();
             return ResultJson.ParameterError();
         }
-
+        LinUser linUser = userService.loginUser(userJsonIn);
+        if (linUser==null){
+            return new ResultJson(123,"身份证号未录入,请联系管理员录入",null);
+        }
         try {
-            LinUser linUser = userService.loginUser(userJsonIn);
+
             String uid = linUser.getId().toString();
             //创建token，并设进redis中
             String accessToken = tokenManager.createToken(uid);
@@ -201,17 +210,27 @@ public class UserController {
 
 
     @PostMapping(value = "search",name="查询用户")
+    @LoginRequired
     public ResultJson searchAllUserByKey(
             @RequestBody QueryParam queryParam
-    ,@RequestHeader(value = "ticket",required = false) String ticket){
+    ,NativeWebRequest webRequest,
+            @RequestHeader(value = "ticket",required = false) String ticket) throws Exception {
         if (queryParam.getPage()==null) {
             queryParam.setPage(1);
         }
         if (queryParam.getCount()==null) {
            queryParam.setCount(10);
         }
+        Integer uid = (Integer) webRequest.getAttribute(ConstConfig.CURRENT_USER_ID, RequestAttributes.SCOPE_REQUEST);
+        if (uid == null) {
+            return ResultJson.ServerError();
+        }
+        LinUser userById = userService.getUserById(uid);
+        if (userById.getType() == 2) {
+            queryParam.setCoachName(userById.getNickname());
+        }
         try {
-            return ResultJson.Sucess(userService.getUsers(queryParam.getSearchTimerangeType(),queryParam.getNickName(), queryParam.getType(), queryParam.getSubjectTwo(), queryParam.getSubjectThree(), queryParam.getCoachName(), queryParam.getPage(), queryParam.getCount(),queryParam.getStartDate(),queryParam.getEndDate()));
+            return ResultJson.Sucess(userService.getUsers(queryParam.getCoachName(),queryParam.getSearchTimerangeType(),queryParam.getNickname(), queryParam.getType(), queryParam.getSubjectTwo(), queryParam.getSubjectThree(), queryParam.getIntroducer(), queryParam.getPage(), queryParam.getCount(),queryParam.getStartDate(),queryParam.getEndDate()));
         }
         catch (BussinessErrorException be){
             return ResultJson.BussinessException(be.getLocalizedMessage());
@@ -222,10 +241,8 @@ public class UserController {
         }
     }
 
-    /**
-     * 导出资产管理列表"
-     */
-    @ApiOperation(value = "导出资产管理列表", notes = "导出资产管理列表", httpMethod = "POST")
+
+ /*   @ApiOperation(value = "导出资产管理列表", notes = "导出资产管理列表", httpMethod = "POST")
     @PostMapping("/export/users")
     public void exportAssetsManageList(HttpServletResponse response, HttpServletRequest request,
                                        @RequestParam(required = false) String nickName
@@ -264,7 +281,40 @@ public class UserController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }*/
+
+
+    /**
+     * 导出资产管理列表"
+     */
+    @ApiOperation(value = "导出资产管理列表", notes = "导出资产管理列表", httpMethod = "POST")
+    @PostMapping("/export/users/id")
+    public ResultJson users(HttpServletResponse response, HttpServletRequest request,
+                            @RequestBody List<Integer> ids
+    ) throws Exception {
+
+        String sTitle = "名称,身份证号,金额,教练,科目二,科目三,注册时间,介绍人";
+        String mapKey = "nickname,card,cost,coachName,subjectTwo,subjectThree,registerTimeStr,introducer";
+
+        List<Map> users = userService.getUsersByIds(ids)
+                .stream().map(user ->
+                {
+                    return JSON.parseObject(JSON.toJSONString(user), Map.class);
+                })
+                .collect(Collectors.toList());
+        String s = CSVUtils.doExport(users, sTitle, mapKey);
+        return ResultJson.Sucess(s);
     }
+
+    @GetMapping(value = "/csvData/{ts}", produces = MediaType.TEXT_PLAIN_VALUE)
+    public String getCSVData(
+            @PathVariable(value = "ts") String ts) throws IOException {
+        Resource resource = new FileSystemResource("/data/path/"+ts+".xls");
+        File file = resource.getFile();
+        String csvContent = FileUtils.readFileToString(file, StandardCharsets.UTF_8.name());
+        return csvContent;
+    }
+
 
 
 
