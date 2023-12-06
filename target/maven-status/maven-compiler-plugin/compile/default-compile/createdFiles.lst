@@ -24,6 +24,7 @@ cn/chenxins/cms/model/entity/mapper/LinUserMapper.class
 cn/chenxins/utils/ConstConfig.class
 cn/chenxins/exception/BussinessErrorException.class
 cn/chenxins/cms/model/json/AuthJosnOut.class
+cn/chenxins/authorization/interceptor/WebConfig.class
 cn/chenxins/cms/model/entity/LinUser.class
 cn/chenxins/utils/ResultJson.class
 cn/chenxins/cms/model/entity/mapper/BookMapper.class

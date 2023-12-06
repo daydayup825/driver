@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Table(name = "lin_user")
@@ -57,8 +58,8 @@ public class LinUser {
     @Column(name = "subject_two")
     private Integer subjectTwo;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @Column(name = "subject_two_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date subjectTwoTime;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -73,6 +74,9 @@ public class LinUser {
 
     @Transient
     private String registerTimeStr;
+
+
+
 
 
 }

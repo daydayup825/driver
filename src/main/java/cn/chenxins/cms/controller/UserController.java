@@ -8,6 +8,7 @@ import cn.chenxins.authorization.annotation.RefreshTokenRequired;
 import cn.chenxins.authorization.manager.TokenManager;
 import cn.chenxins.cms.model.dto.QueryParam;
 import cn.chenxins.cms.model.entity.LinUser;
+import cn.chenxins.cms.model.entity.mapper.LinUserDTO;
 import cn.chenxins.cms.model.json.TokenJsonOut;
 import cn.chenxins.cms.model.json.UserJsonIn;
 import cn.chenxins.cms.model.json.UserPageJsonOut;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -88,7 +90,7 @@ public class UserController {
          * 校验入参
          */
         try {
-            if (StringUtils.isEmpty(userJsonIn.getNickname())){
+            if (StringUtils.isEmpty(userJsonIn.getNickname())) {
                 throw new ParamValueException("身份证不能为空");
             }
         } catch (ParamValueException pe) {
@@ -98,8 +100,8 @@ public class UserController {
             return ResultJson.ParameterError();
         }
         LinUser linUser = userService.loginUser(userJsonIn);
-        if (linUser==null){
-            return new ResultJson(123,"身份证号未录入,请联系管理员录入",null);
+        if (linUser == null) {
+            return new ResultJson(123, "身份证号未录入,请联系管理员录入", null);
         }
         try {
 
@@ -112,7 +114,7 @@ public class UserController {
 
         } catch (TokenException te) {
             return ResultJson.TokenRedisException();
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return ResultJson.ServerError();
         }
@@ -130,12 +132,11 @@ public class UserController {
     private String getBearerToken(HttpServletRequest request) {
         //从header中得到token
         String authss = request.getHeader(ConstConfig.AUTHORIZATION);
-        if (authss==null)
-        {
+        if (authss == null) {
             return null;
         }
-        String[] aa=authss.split("\\.");
-        if (aa.length!=2)
+        String[] aa = authss.split("\\.");
+        if (aa.length != 2)
             return null;
         // String baseToken=aa[1];
 //        String ss= new String(Base64.getDecoder().decode(baseToken),"utf-8");
@@ -144,13 +145,11 @@ public class UserController {
     }
 
 
-
-
     @PostMapping("register")
     @AdminRequired
     @LoggerReg(template = "管理员新建了一个用户")
     public Object userRegister(@RequestBody LinUser userInfo,
-                               @RequestHeader(value = "authorization",required = false) String authorization) {
+                               @RequestHeader(value = "authorization", required = false) String authorization) {
         try {
             userService.register(userInfo);
             return ResultJson.Sucess();
@@ -165,13 +164,26 @@ public class UserController {
     @PostMapping("registers")
     @AdminRequired
     @LoggerReg(template = "管理员新建了一个用户")
-    public Object userRegisters(@RequestBody List<LinUser> userInfos,
-                               @RequestHeader(value = "authorization",required = false) String authorization) {
+    public Object userRegisters(@RequestBody List<LinUserDTO> userInfos,
+                                @RequestHeader(value = "authorization", required = false) String authorization) {
         try {
-            for (LinUser userInfo : userInfos) {
+            for (LinUserDTO userInfo : userInfos) {
                 try {
-                    userService.register(userInfo);
-                }catch (Exception e){
+                    LinUser linUser = new LinUser();
+                    BeanUtils.copyProperties(userInfo, linUser);
+                    if (userInfo.getSubjectTwoTimeLong() != null) {
+                        linUser.setSubjectTwoTime(new Date(userInfo.getSubjectTwoTimeLong()));
+                        userInfo.setSubjectTwoTimeLong(null);
+                    }
+                    if (userInfo.getSubjectThreeTimeLong() != null) {
+                        linUser.setSubjectThreeTime(new Date(userInfo.getSubjectThreeTimeLong()));
+                    }
+                    if (userInfo.getRegisterTimeLong() != null) {
+                        linUser.setRegisterTime(new Date(userInfo.getRegisterTimeLong()));
+                    }
+                    userService.register(linUser);
+
+                } catch (Exception e) {
                     System.out.println(e);
                 }
             }
@@ -186,7 +198,7 @@ public class UserController {
     @PutMapping()
     @LoginRequired
     public Object userUpdate(@RequestBody List<LinUser> users, NativeWebRequest webRequest,
-                             @RequestHeader(value = "authorization",required = false) String authorization) {
+                             @RequestHeader(value = "authorization", required = false) String authorization) {
 
         try {
             Integer uid = (Integer) webRequest.getAttribute(ConstConfig.CURRENT_USER_ID, RequestAttributes.SCOPE_REQUEST);
@@ -208,18 +220,17 @@ public class UserController {
     }
 
 
-
-    @PostMapping(value = "search",name="查询用户")
+    @PostMapping(value = "search", name = "查询用户")
     @LoginRequired
     public ResultJson searchAllUserByKey(
             @RequestBody QueryParam queryParam
-    ,NativeWebRequest webRequest,
-            @RequestHeader(value = "ticket",required = false) String ticket) throws Exception {
-        if (queryParam.getPage()==null) {
+            , NativeWebRequest webRequest,
+            @RequestHeader(value = "ticket", required = false) String ticket) throws Exception {
+        if (queryParam.getPage() == null) {
             queryParam.setPage(1);
         }
-        if (queryParam.getCount()==null) {
-           queryParam.setCount(10);
+        if (queryParam.getCount() == null) {
+            queryParam.setCount(10);
         }
         Integer uid = (Integer) webRequest.getAttribute(ConstConfig.CURRENT_USER_ID, RequestAttributes.SCOPE_REQUEST);
         if (uid == null) {
@@ -230,12 +241,10 @@ public class UserController {
             queryParam.setCoachName(userById.getNickname());
         }
         try {
-            return ResultJson.Sucess(userService.getUsers(queryParam.getCoachName(),queryParam.getSearchTimerangeType(),queryParam.getNickname(), queryParam.getType(), queryParam.getSubjectTwo(), queryParam.getSubjectThree(), queryParam.getIntroducer(), queryParam.getPage(), queryParam.getCount(),queryParam.getStartDate(),queryParam.getEndDate()));
-        }
-        catch (BussinessErrorException be){
+            return ResultJson.Sucess(userService.getUsers(queryParam.getCoachName(), queryParam.getSearchTimerangeType(), queryParam.getNickname(), queryParam.getType(), queryParam.getSubjectTwo(), queryParam.getSubjectThree(), queryParam.getIntroducer(), queryParam.getPage(), queryParam.getCount(), queryParam.getStartDate(), queryParam.getEndDate()));
+        } catch (BussinessErrorException be) {
             return ResultJson.BussinessException(be.getLocalizedMessage());
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return ResultJson.ServerError();
         }
@@ -309,13 +318,11 @@ public class UserController {
     @GetMapping(value = "/csvData/{ts}", produces = MediaType.TEXT_PLAIN_VALUE)
     public String getCSVData(
             @PathVariable(value = "ts") String ts) throws IOException {
-        Resource resource = new FileSystemResource("/data/path/"+ts+".xls");
+        Resource resource = new FileSystemResource("/data/path/" + ts + ".xls");
         File file = resource.getFile();
         String csvContent = FileUtils.readFileToString(file, StandardCharsets.UTF_8.name());
         return csvContent;
     }
-
-
 
 
     @ApiOperation(value = "导入资产管理", notes = "导入资产管理", httpMethod = "POST")
@@ -326,36 +333,34 @@ public class UserController {
         // 将文件内容解析，存入List容器，List<String>为每一行内容的集合，6为CSV文件每行的总列数
         List<List<String>> lists = CsvImportUtil.readCSV(csvFile.getPath(), 9);
 
-        String sTitle = "nickname,card,phone,cost,coachName,subjectTwo,subjectThree,registerTime";
-
 
         lists.stream().forEach(info -> {
             // 处理业务逻辑代码
             try {
-            System.out.println("info:" + info);
-            LinUser user = new LinUser();
-            user.setNickname(info.get(0));
-            user.setCard(info.get(1));
-            user.setPhone(info.get(2));
-            if (!StringUtils.isEmpty(info.get(3))){
-                user.setCost(NumberUtils.parseNumber(info.get(3), BigDecimal.class));
-            }
-            user.setCoachName(info.get(4));
-            if (!StringUtils.isEmpty(info.get(5))){
-                user.setSubjectTwo(NumberUtils.parseNumber(info.get(5),Integer.class));
-            }
-            if (!StringUtils.isEmpty(info.get(6))){
-                user.setSubjectThree(NumberUtils.parseNumber(info.get(6),Integer.class));
-            }
+                System.out.println("info:" + info);
+                LinUser user = new LinUser();
+                user.setNickname(info.get(0));
+                user.setCard(info.get(1));
+                user.setPhone(info.get(2));
+                if (!StringUtils.isEmpty(info.get(3))) {
+                    user.setCost(NumberUtils.parseNumber(info.get(3), BigDecimal.class));
+                }
+                user.setCoachName(info.get(4));
+                if (!StringUtils.isEmpty(info.get(5))) {
+                    user.setSubjectTwo(NumberUtils.parseNumber(info.get(5), Integer.class));
+                }
+                if (!StringUtils.isEmpty(info.get(6))) {
+                    user.setSubjectThree(NumberUtils.parseNumber(info.get(6), Integer.class));
+                }
                 if (!StringUtils.isEmpty(info.get(7))) {
-                    user.setRegisterTime(new Date(info.get(7)));
+                    //    user.setRegisterTime(new Date(info.get(7)));
                 }
                 user.setIntroducer(info.get(8));
                 try {
                     if (!StringUtils.isEmpty(info.get(9))) {
                         user.setType(NumberUtils.parseNumber(info.get(9), Integer.class));
                     }
-                }catch (Exception e){
+                } catch (Exception e) {
                     user.setType(3);
                 }
 
@@ -368,31 +373,28 @@ public class UserController {
     }
 
 
-    @PostMapping(value = "/{userId}/{type}/tickets",name="ticket")
+    @PostMapping(value = "/{userId}/{type}/tickets", name = "ticket")
     @GroupRequired
     public ResultJson searchAllUserByKey(@PathVariable("userId") Integer userId
             , @PathVariable("type") Integer type
-            ,@RequestBody
-    QueryParam queryParam,
-                                         @RequestHeader(value = "ticket",required = false) String ticket) {
+            , @RequestBody
+                                         QueryParam queryParam,
+                                         @RequestHeader(value = "ticket", required = false) String ticket) {
 
-        if (queryParam.getPage()==null) {
+        if (queryParam.getPage() == null) {
             queryParam.setPage(1);
         }
-        if (queryParam.getCount()==null) {
+        if (queryParam.getCount() == null) {
             queryParam.setCount(100);
         }
 
         try {
             return ResultJson.Sucess(ticketService.getUserTickets(userId, type, queryParam.getStartDate(), queryParam.getEndDate(), queryParam.getPage(), queryParam.getCount()));
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return ResultJson.ServerError();
         }
     }
-
-
 
 
     @PutMapping("change_password")
@@ -420,7 +422,7 @@ public class UserController {
 
     @GetMapping("refresh")
     @RefreshTokenRequired
-    public Object refresh(NativeWebRequest webRequest,@RequestHeader(value = "authorization",required = false) String authorization) {
+    public Object refresh(NativeWebRequest webRequest, @RequestHeader(value = "authorization", required = false) String authorization) {
         try {
             Integer uid = (Integer) webRequest.getAttribute(ConstConfig.CURRENT_USER_ID, RequestAttributes.SCOPE_REQUEST);
             if (uid == null) {
@@ -440,23 +442,23 @@ public class UserController {
         }
     }
 
-    @DeleteMapping(value = "",name="删除用户")
+    @DeleteMapping(value = "", name = "删除用户")
     @LoginRequired
-    public Object deleteBook(@RequestBody List<Integer> ids,NativeWebRequest webRequest,@RequestHeader(value = "token",required = false) String token) {
+    public Object deleteBook(@RequestBody List<Integer> ids, NativeWebRequest webRequest, @RequestHeader(value = "token", required = false) String token) {
         try {
             Integer uid = (Integer) webRequest.getAttribute(ConstConfig.CURRENT_USER_ID, RequestAttributes.SCOPE_REQUEST);
             if (uid == null) {
                 return ResultJson.ServerError();
             }
-            if (ids.contains(uid)){
+            if (ids.contains(uid)) {
                 throw new BussinessErrorException("不能删除自己");
             }
             userService.delModelS(ids);
             return ResultJson.Sucess();
 
-        }catch (BussinessErrorException be){
+        } catch (BussinessErrorException be) {
             return ResultJson.BussinessException(be.getLocalizedMessage());
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return ResultJson.ServerError();
         }

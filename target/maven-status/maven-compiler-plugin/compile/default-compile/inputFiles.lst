@@ -58,3 +58,4 @@
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/utils/DesUtils.java
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/cms/model/json/BookJsonIn.java
 /Users/fanbopeng/code/driver/src/main/java/cn/chenxins/authorization/annotation/GroupRequired.java
+/Users/fanbopeng/code/driver/src/main/java/cn/chenxins/authorization/interceptor/WebConfig.java
